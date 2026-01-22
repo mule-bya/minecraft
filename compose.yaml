@@ -1,109 +1,173 @@
 networks:
+# Create an internal network called 'minecraft-network'
+# This allows lazymc to connect to minecraft
   minecraft-network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.18.0.0.16
+        - subnet: 172.18.0.0/16
 
 services:
+# Creates an instance of lazymc.
+# Stops the minecraft server when inactive.
   lazymc:
     image: ghcr.io/joesturge/lazymc-docker-proxy:latest
+# Connect to the internal network
     networks:
       minecraft-network:
         ipv4_address: 172.18.0.2
     restart: unless-stopped
+# Mount permanent storage, read only
     volumes:
       - data:/server:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - 25565:25565
-
+      
+# Creates our minecraft server.
   minecraft:
     image: itzg/minecraft-server:latest
+# Wait for restore-backup to complete
     depends_on:
       restore-backup:
         condition: service_completed_successfully
+# Update daily.
     pull_policy: daily
+# Connect to the internal network.
     networks:
       minecraft-network:
         ipv4_address: 172.18.0.3
+# Activate lazymc and connect to it.
     labels:
       - lazymc.enabled=true
       - lazymc.group=minecraft
-      - lazymc.server.address=mc:25565
+      - lazymc.server.address=minecraft:25565
+# Enable console and input in the docker container
+# once the server is up
     tty: true
     stdin_open: true
     environment:
+# No GUI on the server
       GUI: false
+# Sure, someone read the EULA
       EULA: "TRUE"
+# Allocates 4-6 gigs of RAM
       INIT_MEMORY: 4G
       MAX_MEMORY: 6G
+# Sets the timezone
       TZ: America/Los_Angeles
+# Selects the flavor of minecraft. 
+# Leaf is supposed to be like Paper, but smoother? 
+# And Paper is supposed to be like Vanilla but cleaner? 
+# Who the hell knows.
       TYPE: LEAF
+# Message of the Day
       MOTD: "Welcome, all ye Animals!"
+# Game mode
       MODE: survival
+# Are you on the list?
       ENABLE_WHITELIST: true
       WHITELIST_FILE: ./WHITELIST
       OPS_FILE: ./OPS
+# RCON is some kind of server control thing?
+# Remote Controller?
       ENABLE_RCON: true
       RCON_PASSWORD_FILE: /run/secrets/rcon_password
       RCON_PORT: 25575
       BROADCAST_RCON_TO_OPS: true
+# Name the level, allow the Nether
       LEVEL: bya1
       ALLOW_NETHER: true
+# Allow 12 simultaneous players.
+# Not that I expect us to ever get close, 
+# but this should be conservative.
       MAX_PLAYERS: 12
+# Changing this number influences lag. Mysteriously?
       NETWORK_COMPRESSION_THRESHOLD: 512
       SERVER_NAME: BYA
+# Mount permanent storage on the disk
     volumes: 
       - ./data:data
     restart: no
+# Access the secret password.
     secrets:
       - rcon_password
 
+# Creates the web interface for RCON.
   web:
     image: itzg/rcon
     environment:
+# Sets the RCON web username to animal.
       RWA_USERNAME: animal
+# Accesses RCON web password, stored in a secreted file.
       RWA_PASSWORD_FILE: /run/secrets/rwa_password
+# Give amind access to the RCON web interface.
       RWA_ADMIN: true
       RWA_RCON_HOST: minecraft
+# Access the RCON password, stored in a secreted file.
       RWA_RCON_PASSWORD_FILE: /run/secrets/rcon_password
     ports:
       - 4326:4326
       - 4327:4327
+# Access the secret passwords.
     secrets:
       - rwa_password
       - rcon_password
 
+# Create a backup scheduler.
   backup:
     image: itzg/mc-backup:latest
+# Only runs backups when the minecraft server is up.
     depends_on:
       minecraft:
         condition: service_healthy
+# Updates daily, restarts itself.
     pull_policy: daily
     restart: unless-stopped
     environment:
+# Where to find the data.
       SRC_DIR: /data
       BACKUP_NAME: bya1
+# Tarball the backup.
       BACKUP_METHOD: tar
+# Access the RCON password from the secret file.
       RCON_PASSWORD_FILE: /run/secrets/rcon_password
+# Set the timezone to local.
       TZ: America/Los_Angeles
+# GZIP the Tarball, because those things are nuts.
       TAR_COMPRESS_METHOD: gzip
+# Connect to RCON and minecraft.
       RCON_HOST: minecraft
-      BACKUP_INTERVAL: "2h"
+      SERVER_PORT: 25565
+# Wait 5 minutes before the first backup.
+      INITIAL_DELAY: 5m
+# Make new backups every 2 hours.
+      BACKUP_INTERVAL: 2h
+# Delete backups older than 4 days.
+      PRUNE_BACKUP_DAYS: 4
+# Give read only access to the data to be backed up
+# Then write access to the backup folder.
     volumes:
       - ./data:/data:ro
       - ./backups:/backups
+# Grant access to the RCON secret password.
     secrets:
       - rcon_password
 
+# Creates a service to restore backups.
   restore-backup:
     image: itzg/mc-backup:latest
     restart: no
+# Runs the restoration.
     entrypoint: restore-tar-backup
+# Grants read only access to backups,
+# but write access to data for overwrite.
     volumes:
       - ./data:/data
       - ./backups:/backups:ro
+
+# Establishes the local location
+# of the secret password files.
 secrets:
   rcon_password:
     file: ./rcon_password
