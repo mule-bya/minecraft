@@ -1,0 +1,111 @@
+networks:
+  minecraft-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0.16
+
+services:
+  lazymc:
+    image: ghcr.io/joesturge/lazymc-docker-proxy:latest
+    networks:
+      minecraft-network:
+        ipv4_address: 172.18.0.2
+    restart: unless-stopped
+    volumes:
+      - data:/server:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - 25565:25565
+
+  minecraft:
+    image: itzg/minecraft-server:latest
+    depends_on:
+      restore-backup:
+        condition: service_completed_successfully
+    pull_policy: daily
+    networks:
+      minecraft-network:
+        ipv4_address: 172.18.0.3
+    labels:
+      - lazymc.enabled=true
+      - lazymc.group=minecraft
+      - lazymc.server.address=mc:25565
+    tty: true
+    stdin_open: true
+    environment:
+      GUI: false
+      EULA: "TRUE"
+      INIT_MEMORY: 4G
+      MAX_MEMORY: 6G
+      TZ: America/Los_Angeles
+      TYPE: LEAF
+      MOTD: "Welcome, all ye Animals!"
+      MODE: survival
+      ENABLE_WHITELIST: true
+      WHITELIST_FILE: ./WHITELIST
+      OPS_FILE: ./OPS
+      ENABLE_RCON: true
+      RCON_PASSWORD_FILE: /run/secrets/rcon_password
+      RCON_PORT: 25575
+      BROADCAST_RCON_TO_OPS: true
+      LEVEL: bya1
+      ALLOW_NETHER: true
+      MAX_PLAYERS: 12
+      NETWORK_COMPRESSION_THRESHOLD: 512
+      SERVER_NAME: BYA
+    volumes: 
+      - ./data:data
+    restart: no
+    secrets:
+      - rcon_password
+
+  web:
+    image: itzg/rcon
+    environment:
+      RWA_USERNAME: animal
+      RWA_PASSWORD_FILE: /run/secrets/rwa_password
+      RWA_ADMIN: true
+      RWA_RCON_HOST: minecraft
+      RWA_RCON_PASSWORD_FILE: /run/secrets/rcon_password
+    ports:
+      - 4326:4326
+      - 4327:4327
+    secrets:
+      - rwa_password
+      - rcon_password
+
+  backup:
+    image: itzg/mc-backup:latest
+    depends_on:
+      minecraft:
+        condition: service_healthy
+    pull_policy: daily
+    restart: unless-stopped
+    environment:
+      SRC_DIR: /data
+      BACKUP_NAME: bya1
+      BACKUP_METHOD: tar
+      RCON_PASSWORD_FILE: /run/secrets/rcon_password
+      TZ: America/Los_Angeles
+      TAR_COMPRESS_METHOD: gzip
+      RCON_HOST: minecraft
+      BACKUP_INTERVAL: "2h"
+    volumes:
+      - ./data:/data:ro
+      - ./backups:/backups
+    secrets:
+      - rcon_password
+
+  restore-backup:
+    image: itzg/mc-backup:latest
+    restart: no
+    entrypoint: restore-tar-backup
+    volumes:
+      - ./data:/data
+      - ./backups:/backups:ro
+secrets:
+  rcon_password:
+    file: ./rcon_password
+  rwa_password:
+    file: ./rwa_password
