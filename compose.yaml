@@ -98,13 +98,14 @@ services:
     image: itzg/rcon
     environment:
 # Sets the RCON web username to animal.
+      RWA_ENV: true
       RWA_USERNAME: animal
 # Accesses RCON web password, stored in a secreted file.
       RWA_PASSWORD_FILE: /run/secrets/rwa_password
-# Give amind access to the RCON web interface.
+# Give admin access to the RCON web interface.
       RWA_ADMIN: true
       RWA_RCON_HOST: minecraft
-      RWA_PASSWORD: admin
+      RWA_WEB_RCON: true
 # Access the RCON password, stored in a secreted file.
       RWA_RCON_PASSWORD_FILE: /run/secrets/rcon_password
     ports:
