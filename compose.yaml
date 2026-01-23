@@ -87,7 +87,7 @@ services:
       SERVER_NAME: BYA
 # Mount permanent storage on the disk
     volumes: 
-      - /home/dan/Documents/minecraft/data:data
+      - /home/dan/Documents/minecraft/data:/data
     restart: no
 # Access the secret password.
     secrets:
