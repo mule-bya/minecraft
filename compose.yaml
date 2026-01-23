@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
 # Mount permanent storage, read only
     volumes:
-      - ./data:/server:ro
+      - /home/dan/Documents/minecraft/data:/server:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - 25565:25565
@@ -67,8 +67,8 @@ services:
       MODE: survival
 # Are you on the list?
       ENABLE_WHITELIST: true
-      WHITELIST_FILE: ./WHITELIST
-      OPS_FILE: ./OPS
+      WHITELIST_FILE: /home/dan/Documents/minecraft/WHITELIST
+      OPS_FILE: /home/dan/Documents/minecraft/OPS
 # RCON is some kind of server control thing?
 # Remote Controller?
       ENABLE_RCON: true
@@ -87,7 +87,7 @@ services:
       SERVER_NAME: BYA
 # Mount permanent storage on the disk
     volumes: 
-      - ./data:/data
+      - /home/dan/Documents/minecraft/data:/data
     restart: no
 # Access the secret password.
     secrets:
@@ -148,8 +148,8 @@ services:
 # Give read only access to the data to be backed up
 # Then write access to the backup folder.
     volumes:
-      - ./data:/data:ro
-      - .t/backups:/backups
+      - /home/dan/Documents/minecraft/data:/data:ro
+      - /home/dan/Documents/minecraft/backups:/backups
 # Grant access to the RCON secret password.
     secrets:
       - rcon_password
@@ -163,13 +163,13 @@ services:
 # Grants read only access to backups,
 # but write access to data for overwrite.
     volumes:
-      - ./data:/data
-      - ./backups:/backups:ro
+      - /home/dan/Documents/minecraft/data:/data
+      - /home/dan/Documents/minecraft/backups:/backups:ro
 
 # Establishes the local location
 # of the secret password files.
 secrets:
   rcon_password:
-    file: ./rcon_password
+    file: /home/dan/Documents/minecraft/rcon_password
   rwa_password:
-    file: ./rwa_password
+    file: /home/dan/Documents/minecraft/rwa_password
