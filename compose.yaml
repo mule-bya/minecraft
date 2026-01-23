@@ -141,8 +141,8 @@ services:
 # Connect to RCON and minecraft.
       RCON_HOST: minecraft
       SERVER_PORT: 25565
-# Wait 5 minutes before the first backup.
-      INITIAL_DELAY: 5m
+# Wait 0 minutes before the first backup.
+      INITIAL_DELAY: 0
 # Make new backups every 2 hours.
       BACKUP_INTERVAL: 2h
 # Delete backups older than 4 days.
