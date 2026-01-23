@@ -104,6 +104,7 @@ services:
 # Give amind access to the RCON web interface.
       RWA_ADMIN: true
       RWA_RCON_HOST: minecraft
+      RWA_PASSWORD: admin
 # Access the RCON password, stored in a secreted file.
       RWA_RCON_PASSWORD_FILE: /run/secrets/rcon_password
     ports:
