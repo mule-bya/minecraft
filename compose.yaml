@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
 # Mount permanent storage, read only
     volumes:
-      - /home/dan/Documents/minecraft/data:/server:ro
+      - ./data:/server:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - 25565:25565
@@ -87,7 +87,7 @@ services:
       SERVER_NAME: BYA
 # Mount permanent storage on the disk
     volumes: 
-      - /home/dan/Documents/minecraft/data:/data
+      - ./data:/data
     restart: no
 # Access the secret password.
     secrets:
@@ -148,8 +148,8 @@ services:
 # Give read only access to the data to be backed up
 # Then write access to the backup folder.
     volumes:
-      - /home/dan/Documents/minecraft/data:/data:ro
-      - /home/dan/Documents/minecraft/backups:/backups
+      - ./data:/data:ro
+      - .t/backups:/backups
 # Grant access to the RCON secret password.
     secrets:
       - rcon_password
@@ -163,13 +163,13 @@ services:
 # Grants read only access to backups,
 # but write access to data for overwrite.
     volumes:
-      - /home/dan/Documents/minecraft/data:/data
-      - /home/dan/Documents/minecraft/backups:/backups:ro
+      - ./data:/data
+      - ./backups:/backups:ro
 
 # Establishes the local location
 # of the secret password files.
 secrets:
   rcon_password:
-    file: /home/dan/Documents/minecraft/rcon_password
+    file: ./rcon_password
   rwa_password:
-    file: /home/dan/Documents/minecraft/rwa_password
+    file: ./rwa_password
